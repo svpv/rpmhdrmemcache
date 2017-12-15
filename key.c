@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <rpm/rpmlib.h>
 #include "hdrcache.h"
-#include "sm3.h"
+#include "sm48.h"
 
 bool hdrcache_key(const char *fname, const struct stat *st, struct key *key)
 {
