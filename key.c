@@ -19,10 +19,10 @@ bool hdrcache_key(const char *fname, const struct stat *st, struct key *key)
     const char *dotrpm = bn + len - 4;
     if (memcmp(dotrpm, ".rpm", 4))
 	return false;
-    // size and mtime will be serialized into 9 base62 characters;
+    // size and mtime will be serialized into 8 base64 characters;
     // also, ".rpm" suffix will be stripped; on the second thought,
     // a separator should rather be kept
-    key->len = len + 9 - 3;
+    key->len = len + 8 - 3;
     if (key->len > MAXKEYLEN) {
 	fprintf(stderr, "%s %s: name too long\n", __func__, bn);
 	return false;
@@ -30,18 +30,15 @@ bool hdrcache_key(const char *fname, const struct stat *st, struct key *key)
     // copy basename and put the separator
     char *p = mempcpy(key->str, bn, len - 4);
     *p++ = '@';
-    // serialize size+mtime
-    // since 2^53 < 62^9, 53 bits fit nicely into 9 base62 characters
-    uint64_t sm53 = smx(st->st_size, st->st_mtime, 53);
-    static const char base62[] = "0123456789"
+    // combine size+mtime
+    uint64_t sm = sm48(st->st_size, st->st_mtime);
+    // serialize size+mtime with base64
+    static const char base64[] = "0123456789"
 	    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	    "abcdefghijklmnopqrstuvwxyz";
-    for (int i = 0; i < 9; i++) {
-	int r = sm53 % 62;
-	sm53 /= 62;
-	*p++ = base62[r];
-    }
-    assert(sm53 == 0);
+	    "abcdefghijklmnopqrstuvwxyz" "+-";
+    for (int i = 0; i < 8; i++, sm >>= 6)
+	*p++ = base64[sm & 077];
+    assert(sm == 0);
     *p = '\0';
     return true;
 }

@@ -1,5 +1,5 @@
 /*
- * sm3.h - combine st_size and st_mtime into short[3]
+ * sm48.h - combine st_size and st_mtime into a 48-bit integer
  */
 
 static const unsigned char reverse8[] = {
@@ -24,11 +24,6 @@ static const unsigned char reverse8[] = {
 static inline unsigned reverse16(unsigned x)
 {
     return (reverse8[x & 0xff] << 8) | reverse8[(x >> 8) & 0xff];
-}
-
-static inline unsigned reverse32(unsigned x)
-{
-    return (reverse16(x) << 16) | reverse16(x >> 16);
 }
 
 /*
@@ -63,17 +58,14 @@ static inline unsigned reverse32(unsigned x)
  * the size by more than 8M.
  */
 
-static inline void sm3(unsigned size, unsigned mtime, unsigned short sm[3])
+static inline uint64_t sm48(unsigned size, unsigned mtime)
 {
-    sm[0] = size;
-    sm[1] = mtime;
-    sm[2] = (size >> 16) ^ reverse16(mtime >> 16);
-}
-
-/*
- * The same idea can be applied to any number of bits >= 32, not just 48.
- */
-static inline uint64_t smx(unsigned size, unsigned mtime, int nbits)
-{
-    return size ^ ((uint64_t) reverse32(mtime) << (nbits - 32));
+    /* To achieve the desired effect, the reversal is only required for
+     * the overlapping bits; the overlapping and non-overlapping bits can
+     * be otherwise combined in a somewhat arbitrary fashion, which opens
+     * the possibility of producing a simpler and slightly faster sequence
+     * of instructions. */
+    unsigned sm32 = (size & 0xffff) | mtime << 16;
+    unsigned sm16 = (size >> 16) ^ reverse16(mtime >> 16);
+    return (uint64_t) sm16 << 32 | sm32;
 }
