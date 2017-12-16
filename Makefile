@@ -1,4 +1,9 @@
-RPM_OPT_FLAGS ?= -g -O2
+RPM_OPT_FLAGS ?= -g -O2 -Wall
+SO = rpmhdrmemcache.so
+all: $(SO)
+clean:
+	rm -f $(SO)
+
 # A few notes on flags:
 # 1) -D_GNU_SOURCE is needed for RTLD_NEXT and program_invocation_short_name;
 # 2) -fwhole-program is a stronger form of -fvisibility=hidden;
@@ -6,12 +11,15 @@ RPM_OPT_FLAGS ?= -g -O2
 # 3) rpmhdrmemcache.so should be linked with -lrpm, because it calls
 # rpmReadPackageFile (via dlsym(RTLD_NEXT, __func__); the call becomes
 # problematic with e.g. Perl's RPM.so, because Perl loads it with RTLD_LOCAL;
-# 4) large file support is not actually needed, because in the code,
-# st_size and st_mtime are always truncated to 32-bit unsigned integers;
-# 5) -std=gnu11 works with gcc >= 4.7, while RHEL7 has gcc-4.8.
-rpmhdrmemcache.so: preload.c key.c hdrcache.c mcdb.c
-	$(CC) -o $@ $^ $(RPM_OPT_FLAGS) \
-		-std=gnu11 -D_GNU_SOURCE -Wall -Wextra \
-		-fpic -shared -flto -fwhole-program \
+# 4) -std=gnu11 works with gcc >= 4.7, while RHEL7 has gcc-4.8.
+
+SRC = preload.c key.c hdrcache.c mcdb.c
+HDR = hdrcache.h mcdb.h sm48.h
+LFS = $(shell getconf LFS_CFLAGS)
+LTO = -fvisibility=hidden -fwhole-program -flto
+$(SO): $(SRC) $(HDR)
+	$(CC) -o $@ $(SRC) \
+		$(RPM_OPT_FLAGS) $(LFS) $(LTO) \
+		-std=gnu11 -D_GNU_SOURCE -fpic -shared \
 		-Wl,--no-as-needed -lrpm -Wl,--as-needed -lrpmio \
-		-ldl -lmemcached -lmemcachedutil -llz4 -Wl,-z,defs
+		-ldl -lmemcached -llz4 -Wl,--no-undefined

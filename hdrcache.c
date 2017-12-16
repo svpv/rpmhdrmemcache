@@ -21,7 +21,6 @@ struct ctx thr_ctx;
 static
 void finalize(int rc, void *arg)
 {
-    (void) rc;
     struct ctx *ctx = arg;
     mcdb_close(ctx->db);
 }

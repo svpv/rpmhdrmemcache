@@ -61,7 +61,6 @@ static memcached_return_t stat_cb(const memcached_instance_st *server,
 	const char *key, size_t klen,
 	const char *val, size_t vlen, void *arg)
 {
-    (void) server;
     int *psize = arg;
     // the fact that we're called means that at least one server is alive
     if (*psize < 0)
@@ -70,7 +69,6 @@ static memcached_return_t stat_cb(const memcached_instance_st *server,
 #define KLEN (sizeof KEY - 1)
     if (klen != KLEN || memcmp(key, KEY, KLEN))
 	return MEMCACHED_SUCCESS;
-    (void) vlen;
     int size = atoi(val);
     // take the minimum size among the servers
     if (size > 0 && (*psize == 0 || size < *psize))
