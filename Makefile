@@ -5,7 +5,7 @@ clean:
 	rm -f $(SO)
 
 # A few notes on flags:
-# 1) -D_GNU_SOURCE is needed for RTLD_NEXT and program_invocation_short_name;
+# 1) -D_GNU_SOURCE is needed for RTLD_NEXT and mempcpy;
 # 2) -fwhole-program is a stronger form of -fvisibility=hidden;
 # the only exported symbol, exclicitly marked as such, is rpmReadPackageFile;
 # 3) rpmhdrmemcache.so should be linked with -lrpm, because it calls

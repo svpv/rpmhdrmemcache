@@ -35,7 +35,7 @@ const char *opt_(const char *name)
 #define opt(name) opt_("RPMHDRMEMCACHE_" name)
 
 static
-struct ctx *initialize()
+struct ctx *hdrcache_init(void)
 {
     struct ctx *ctx = &thr_ctx;
     if (ctx->initialized)
@@ -56,8 +56,8 @@ struct ctx *initialize()
     ctx->max_item_size = mcdb_max_item_size(ctx->db);
     if (ctx->max_item_size < 8192) {
 	if (ctx->max_item_size > 0)
-	    fprintf(stderr, "%s: %s: memcached max item size too small: %d\n",
-		    program_invocation_short_name, "rpmhdrcache", ctx->max_item_size);
+	    fprintf(stderr, "%s: memcached max item size too small: %d\n",
+		    __func__, ctx->max_item_size);
 	mcdb_close(ctx->db);
 	ctx->initialized = -1;
 	return NULL;
@@ -89,7 +89,7 @@ struct cache_ent {
 
 Header hdrcache_get(const struct key *key, unsigned *off)
 {
-    struct ctx *ctx = initialize();
+    struct ctx *ctx = hdrcache_init();
     if (ctx == NULL)
 	return NULL;
     struct cache_ent *ent;
@@ -130,7 +130,7 @@ noent:	free(ent);
 
 void hdrcache_put(const struct key *key, Header h, unsigned off)
 {
-    struct ctx *ctx = initialize();
+    struct ctx *ctx = hdrcache_init();
     if (ctx == NULL)
 	return;
     int blobsize = headerSizeof(h, HEADER_MAGIC_NO);

@@ -5,8 +5,6 @@
 #include <libmemcached-1.0/memcached.h>
 #include "mcdb.h"
 
-#define progname program_invocation_short_name
-
 struct mcdb *mcdb_open(const char *configstring)
 {
     assert(configstring && *configstring);
@@ -16,11 +14,11 @@ struct mcdb *mcdb_open(const char *configstring)
 	buf[0] = '\0';
 	memcached_return_t rc = libmemcached_check_configuration(configstring, strlen(configstring), buf, sizeof buf);
 	if (rc == MEMCACHED_SUCCESS && buf[0] == '\0')
-	    fprintf(stderr, "%s: %s\n", progname, "cannot initialize memcached");
+	    fprintf(stderr, "%s: %s\n", __func__, "cannot initialize memcached");
 	else if (buf[0])
-	    fprintf(stderr, "%s: %s: %.*s\n", progname, "memcached", (int) sizeof buf, buf);
+	    fprintf(stderr, "%s: %.*s\n", __func__, (int) sizeof buf, buf);
 	else
-	    fprintf(stderr, "%s: %s: %s\n", progname, "memcached", memcached_strerror(NULL, rc));
+	    fprintf(stderr, "%s: %s\n", __func__, memcached_strerror(NULL, rc));
     }
     return (void *) memc;
 }
@@ -41,7 +39,7 @@ bool mcdb_get(struct mcdb *db,
     *datap = memcached_get(memc, key, keylen, datasizep, &flags, &rc);
     if (*datap == NULL) {
         if (rc != MEMCACHED_NOTFOUND)
-	    fprintf(stderr, "%s: %s: %s\n", "memcached_get", key, memcached_strerror(memc, rc));
+	    fprintf(stderr, "%s %s: %s\n", __func__, key, memcached_strerror(memc, rc));
 	return false;
     }
     return true;
@@ -54,7 +52,7 @@ void mcdb_put(struct mcdb *db,
     memcached_st *memc = (void *) db;
     memcached_return_t rc = memcached_set(memc, key, keylen, data, datasize, 0, 0);
     if (rc != MEMCACHED_SUCCESS)
-	fprintf(stderr, "%s: %s: %s\n", "memcached_set", key, memcached_strerror(memc, rc));
+	fprintf(stderr, "%s %s: %s\n", __func__, key, memcached_strerror(memc, rc));
 }
 
 static memcached_return_t stat_cb(const memcached_instance_st *server,
@@ -87,8 +85,8 @@ int mcdb_max_item_size(struct mcdb *db)
     if (size > 0)
 	return size;
     if (rc != MEMCACHED_SUCCESS)
-	fprintf(stderr, "%s: %s: %s\n", progname, "memcached_stat_execute", memcached_strerror(NULL, rc));
+	fprintf(stderr, "%s: %s\n", __func__, memcached_strerror(NULL, rc));
     else
-	fprintf(stderr, "%s: %s\n", progname, "cannot connect to memcached");
+	fprintf(stderr, "%s: %s\n", __func__, "cannot connect to memcached");
     return -1;
 }
