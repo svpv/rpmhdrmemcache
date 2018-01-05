@@ -23,10 +23,8 @@ bool hdrcache_key(const char *fname, const struct stat *st, struct key *key)
     // also, ".rpm" suffix will be stripped; on the second thought,
     // a separator should rather be kept
     key->len = len + 8 - 3;
-    if (key->len > MAXKEYLEN) {
-	fprintf(stderr, "%s %s: name too long\n", __func__, bn);
+    if (key->len > MAXKEYLEN)
 	return false;
-    }
     // copy basename and put the separator
     char *p = mempcpy(key->str, bn, len - 4);
     *p++ = '@';
