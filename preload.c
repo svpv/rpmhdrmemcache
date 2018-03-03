@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <limits.h>
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,16 +37,19 @@ rpmRC rpmReadPackageFile(rpmts ts, FD_t fd, const char *fn, Header *hdrp)
 	unsigned off;
 	Header h = hdrcache_get(&key, &off);
 	if (h) {
-	    int pos = lseek(Fileno(fd), off, SEEK_SET);
-	    if (pos != (int) off)
-		headerFree(h);
-	    else {
-		if (hdrp)
-		    *hdrp = h;
-		else
-		    headerFree(h);
-		return RPMRC_OK;
+	    // we don't permit (off == UINT_MAX), because (UINT_MAX == -1)
+	    if (off > 0 && off < UINT_MAX) {
+		off_t pos = lseek(Fileno(fd), off, SEEK_SET);
+		if (pos == off) {
+		    // successful return from the cache
+		    if (hdrp)
+			*hdrp = h;
+		    else
+			headerFree(h);
+		    return RPMRC_OK;
+		}
 	    }
+	    headerFree(h);
 	}
     }
     // set up and call the real __func__
@@ -60,8 +64,8 @@ rpmRC rpmReadPackageFile(rpmts ts, FD_t fd, const char *fn, Header *hdrp)
     // put to the cache
     if (fname) {
 	if (rc == RPMRC_OK || rc == RPMRC_NOTTRUSTED || rc == RPMRC_NOKEY) {
-	    int pos = lseek(Fileno(fd), 0, SEEK_CUR);
-	    if (pos > 0)
+	    off_t pos = lseek(Fileno(fd), 0, SEEK_CUR);
+	    if (pos > 0 && pos < UINT_MAX)
 		hdrcache_put(&key, h, pos);
 	}
 	if (hdrp)
